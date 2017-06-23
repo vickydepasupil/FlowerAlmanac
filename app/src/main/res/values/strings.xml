@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Flower Almanac</string>
+    <string name="add">Add Photo</string>
+    <string name="save">Save</string>
+    <string name="flower">Flower Name</string>
+    <string name="level">Level of Difficulty</string>
+    <string name="inst">Instructions</string>
+    <string name="action_settings">Settings</string>
+    <string name="levels_prompt">Choose difficulty</string>
+    <string name="share">Share on Facebook!</string>
+    <string name="login">Login via Dropbox</string>
+    <string name="iconPic">add photo icon</string>
+    <string name="iconName">flower name icon</string>
+    <string name="iconLevel">difficulty icon</string>
+    <string name="iconInst">instructions icon</string>
+
+    <string name="intent_scheme">oauth</string>
+    <string name="intent_host"></string>
+
+    <string-array name="levels">
+        <item>Easy</item>
+        <item>Medium</item>
+        <item>Difficult</item>
+    </string-array>
+</resources>

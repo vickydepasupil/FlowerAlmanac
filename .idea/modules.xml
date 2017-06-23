@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/FlowerAlmanac.iml" filepath="$PROJECT_DIR$/FlowerAlmanac.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/libs/dropbox-android-sdk-1.6.3.jar/libs_dropbox-android-sdk-1.6.3.jar.iml" filepath="$PROJECT_DIR$/libs/dropbox-android-sdk-1.6.3.jar/libs_dropbox-android-sdk-1.6.3.jar.iml" />
+      <module fileurl="file://$PROJECT_DIR$/libs/json_simple-1.1.jar/libs_json_simple-1.1.jar.iml" filepath="$PROJECT_DIR$/libs/json_simple-1.1.jar/libs_json_simple-1.1.jar.iml" />
+    </modules>
+  </component>
+</project>

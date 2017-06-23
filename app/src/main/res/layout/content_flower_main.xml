@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="ph.edu.up.floweralmanac.FlowerMainActivity">
+
+    <RelativeLayout
+        android:layout_height="60dp"
+        android:layout_width="fill_parent">
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="368dp"
+            android:layout_height="65dp"
+            android:paddingLeft="16dp">
+
+            <ImageView
+                android:id="@+id/thumbnail"
+                android:scaleType="centerCrop"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginRight="8dp"
+                android:layout_gravity="center_vertical"/>
+
+            <LinearLayout
+                android:paddingTop="10dp"
+                android:orientation="vertical"
+                android:layout_height="match_parent"
+                android:layout_width="match_parent">
+
+                <TextView
+                    android:id="@+id/item_name"
+                    android:text="Name"
+                    android:textSize="16sp"
+                    android:textColor="@color/colorPrimaryText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/item_ease"
+                    android:text="Ease of planting"
+                    android:textSize="14sp"
+                    android:textColor="@color/colorSecondaryText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+</RelativeLayout>
+
+</android.support.constraint.ConstraintLayout>

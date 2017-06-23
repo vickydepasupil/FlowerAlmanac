@@ -1,0 +1,3 @@
+include ':app'
+include 'libs/dropbox-android-sdk-1.6.3.jar'
+include 'libs/json_simple-1.1.jar'
