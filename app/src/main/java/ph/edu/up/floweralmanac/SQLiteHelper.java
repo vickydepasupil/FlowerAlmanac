@@ -33,6 +33,8 @@ import static ph.edu.up.floweralmanac.AddActivity.getPathThruURI;
  */
 
 public class SQLiteHelper extends SQLiteOpenHelper {
+    //For migration to Firebase
+
     private static final int DATABASE_VERSION = 1;
     private SQLiteDatabase database;
     private Context context;

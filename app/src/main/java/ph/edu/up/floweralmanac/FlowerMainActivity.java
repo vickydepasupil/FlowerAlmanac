@@ -44,6 +44,7 @@ import ph.edu.up.floweralmanac.models.Flower;
 import static ph.edu.up.floweralmanac.AddActivity.getPathThruURI;
 
 public class FlowerMainActivity extends AppCompatActivity {
+    //For review - more features to ass for practice
 
     private ListView listView;
     private ListFlowerAdapter flowerAdapter;
@@ -471,34 +472,6 @@ public class FlowerMainActivity extends AppCompatActivity {
         }
         return remotePath;
     }
-
-    /*public void writeDB() throws IOException {
-        flowerArrayList = sqLiteHelper.getAllRecords();
-        File file = new File(Environment.getExternalStorageDirectory(), "database.txt");
-
-        Uri filePath = Uri.fromFile(file);
-        textFilePath = getPathThruURI(getApplicationContext(), filePath);
-        FileOutputStream fileOutputStream;
-
-        try {
-            fileOutputStream = new FileOutputStream(file);
-            file.createNewFile();
-            OutputStreamWriter outWriter = new OutputStreamWriter(fileOutputStream);
-
-            for (Flower flower: flowerArrayList) {
-                outWriter.append(flower.getName() + "\n");
-                outWriter.append(flower.getEase() + "\n");
-                outWriter.append(flower.getInstructions() + "\n");
-                outWriter.append("---\n");
-            }
-
-            outWriter.close();
-            fileOutputStream.flush();
-            fileOutputStream.close();
-        } catch (FileNotFoundException fe) {
-            fe.printStackTrace();
-        }
-    }*/
 
     public class UploadText extends AsyncTask<String, Void, String> {
         private Context dContext;

@@ -46,6 +46,7 @@ import java.io.InputStream;
 import static ph.edu.up.floweralmanac.FlowerMainActivity.mDBApi;
 
 public class AddActivity extends AppCompatActivity {
+    //TODO - Add remove photo via button click
 
     public final static String ID = "ph.edu.up.addactivity.ID";
     public final static String NAME = "ph.edu.up.addactivity.NAME";

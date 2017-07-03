@@ -15,6 +15,7 @@ import android.graphics.Matrix;
 import android.os.Build;
 
 public class ExifUtil {
+    //For review - doesn't work on photos taken by camera
 
     public static Bitmap rotateBitmap(String src, Bitmap bitmap) {
         try {

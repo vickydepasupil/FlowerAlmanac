@@ -15,6 +15,7 @@ import com.dropbox.client2.session.AppKeyPair;
 
 
 public class LoginActivity extends AppCompatActivity {
+    //For incorporation in the future - login separated from main activity
 
     final static public String APP_KEY = "77dykoko5st852n";
     final static public String APP_SECRET = "31kvdt1y8id6f3s";
