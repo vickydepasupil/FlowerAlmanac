@@ -26,6 +26,7 @@ import ph.edu.up.floweralmanac.models.Flower;
 import static ph.edu.up.floweralmanac.FlowerMainActivity.mDBApi;
 
 public class ListFlowerAdapter extends BaseAdapter {
+    //Figure out why the thumbnails sometimes show the same photo for all items
 
     private Context context;
     private List<Flower> flowerList;
