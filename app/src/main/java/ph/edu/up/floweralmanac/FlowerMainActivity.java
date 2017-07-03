@@ -4,10 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.StrictMode;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -34,9 +34,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.List;
 
 import ph.edu.up.floweralmanac.models.Flower;
+
+import static ph.edu.up.floweralmanac.AddActivity.getPathThruURI;
 
 public class FlowerMainActivity extends AppCompatActivity {
 
@@ -45,10 +50,17 @@ public class FlowerMainActivity extends AppCompatActivity {
     private List<Flower> flowerArrayList;
     private SQLiteHelper sqLiteHelper;
 
-    final static private String APP_KEY = "77dykoko5st852n";
-    final static private String APP_SECRET = "31kvdt1y8id6f3s";
+    final static public String APP_KEY = "77dykoko5st852n";
+    final static public String APP_SECRET = "31kvdt1y8id6f3s";
 
     public static DropboxAPI<AndroidAuthSession> mDBApi;
+
+    public static String photoPath = "";
+    public static String name = "";
+    public static int id = 0;
+    public static String revIdSave = "";
+
+    public static String textFilePath = "";
 
     DropboxAPI.Entry response;
 
@@ -64,14 +76,15 @@ public class FlowerMainActivity extends AppCompatActivity {
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        initialize_session();
+
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
 
         setContentView(R.layout.activity_flower_main);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        initialize_session();
 
         sqLiteHelper = new SQLiteHelper(this);
         listView =(ListView) findViewById(R.id.layout_main);
@@ -119,7 +132,6 @@ public class FlowerMainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-
         mDBApi.getSession().setOAuth2AccessToken(getAccessToken());
 
         if (requestCode == VIEW) {
@@ -142,6 +154,10 @@ public class FlowerMainActivity extends AppCompatActivity {
                     flower.setInstructions(saveInst);
 
                     sqLiteHelper.deleteRecords(flower);
+
+                    String filePath = getPhoto(saveName, saveID);
+                    deletePhoto(filePath);
+
                     refreshList();
                     Toast.makeText(getApplicationContext(), "Deleted", Toast.LENGTH_LONG).show();
 
@@ -162,10 +178,11 @@ public class FlowerMainActivity extends AppCompatActivity {
             if (resultCode == Activity.RESULT_OK) {
 
                 int saveID = intent.getIntExtra(AddActivity.ID, 0);
-                String saveName = intent.getStringExtra(AddActivity.NAME);
+                name = intent.getStringExtra(AddActivity.NAME);
+                photoPath = intent.getStringExtra(AddActivity.PATH);
                 String saveEase = intent.getStringExtra(AddActivity.EASE);
                 String saveInst = intent.getStringExtra(AddActivity.INST);
-                String savePath = intent.getStringExtra(AddActivity.PATH);
+                String saveRev = intent.getStringExtra(AddActivity.REV);
 
                 flowerArrayList = sqLiteHelper.getAllRecords();
                 int[] idList = new int[100];
@@ -176,14 +193,24 @@ public class FlowerMainActivity extends AppCompatActivity {
                 int maximum = maxVal(idList)+1;
 
                 if (saveID == -1) {
-                    String revIdSave = upload(savePath, saveName, maximum);
+                    id = maximum;
 
-                    saveItem(maximum, saveName, revIdSave, saveEase, saveInst);
+                    if (!photoPath.equals("")) {
+                        new Upload(FlowerMainActivity.this, mDBApi).execute();
+                    }
+
+                    saveItem(id, name, revIdSave, saveEase, saveInst);
                     refreshList();
                 } else {
-                    String revIdUpdate = upload(savePath, saveName, maximum);
+                    id = saveID;
 
-                    updateInfo(saveID, saveName, revIdUpdate, saveEase, saveInst);
+                    if (!photoPath.equals("")) {
+                        new Upload(FlowerMainActivity.this, mDBApi).execute();
+                    }
+
+                    revIdSave = saveRev;
+
+                    updateInfo(id, name, revIdSave, saveEase, saveInst);
                     refreshList();
                     Toast.makeText(getApplicationContext(), "Changes saved", Toast.LENGTH_LONG).show();
                 }
@@ -232,6 +259,9 @@ public class FlowerMainActivity extends AppCompatActivity {
             Flower flower = (Flower) flowerAdapter.getItem(info.position);
             sqLiteHelper.deleteRecords(flower);
 
+            String filePath = getPhoto(flower.getName(), flower.getId());
+            deletePhoto(filePath);
+
             refreshList();
 
             Toast.makeText(getApplicationContext(), "Deleted", Toast.LENGTH_LONG).show();
@@ -251,6 +281,11 @@ public class FlowerMainActivity extends AppCompatActivity {
         flower.setId(id);
 
         sqLiteHelper.updateRecords(flower);
+
+        try {
+            textFilePath = sqLiteHelper.writeDB(getApplicationContext());
+            new UploadText(getApplicationContext(), mDBApi).execute();
+        } catch (IOException ie) {}
     }
 
     public void saveItem(int id, String name, String rev, String ease, String inst) {
@@ -270,6 +305,10 @@ public class FlowerMainActivity extends AppCompatActivity {
 
             sqLiteHelper.insertItems(flower);
         }
+        try {
+            textFilePath = sqLiteHelper.writeDB(getApplicationContext());
+            new UploadText(getApplicationContext(), mDBApi).execute();
+        } catch (IOException ie) {}
     }
 
     public int maxVal (int[] array) {
@@ -279,79 +318,6 @@ public class FlowerMainActivity extends AppCompatActivity {
             max = Math.max(max, value);
         }
         return max;
-    }
-
-    protected void initialize_session() {
-        AppKeyPair appKeyPair = new AppKeyPair(APP_KEY, APP_SECRET);
-        AndroidAuthSession session = new AndroidAuthSession(appKeyPair);
-
-        mDBApi = new DropboxAPI<AndroidAuthSession>(session);
-
-        mDBApi.getSession().startOAuth2Authentication(FlowerMainActivity.this);
-
-        if(!getAccessToken().equalsIgnoreCase("")) {
-            mDBApi.getSession().setOAuth2AccessToken(getAccessToken());
-        } else {
-            mDBApi = new DropboxAPI<AndroidAuthSession>(session);
-            mDBApi.getSession().startOAuth2Authentication(FlowerMainActivity.this);
-        }
-    }
-
-    protected void onResume() {
-
-        super.onResume();
-
-        if (getAccessToken().equalsIgnoreCase("")){
-            if (mDBApi.getSession().authenticationSuccessful()) {
-                try {
-                    mDBApi.getSession().finishAuthentication();
-
-                    String accessToken = mDBApi.getSession().getOAuth2AccessToken();
-                    saveAccessToken(accessToken);
-
-
-
-                } catch (IllegalStateException ie) {
-                    ie.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private void saveAccessToken(String accessToken) {
-        SharedPreferences sharedPreferences = getSharedPreferences("Prefs", Context.MODE_PRIVATE);
-        sharedPreferences.edit().putString("accessToken", accessToken).commit();
-    }
-
-    private String getAccessToken() {
-        SharedPreferences sharedPreferences = getSharedPreferences("Prefs", Context.MODE_PRIVATE);
-        return sharedPreferences.getString("accessToken", "");
-    }
-
-    public String upload(String path, String name, int id) {
-        File file = new File(path);
-        FileInputStream inputStream = null;
-        String revId = "";
-
-        try {
-            inputStream = new FileInputStream(file);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            response = mDBApi.putFile(name+"_"+String.valueOf(id)+".jpg", inputStream, file.length(), null, null);
-            if(response.rev != null) {
-                Toast.makeText(this, "Photo uploaded to Dropbox", Toast.LENGTH_LONG).show();
-                revId = response.rev;
-            }
-        } catch (DropboxException de) {
-            de.printStackTrace();
-        } catch (IllegalArgumentException ie){
-            Toast.makeText(this, "No photo attached to item", Toast.LENGTH_LONG).show();
-        }
-
-        return revId;
     }
 
     public void refreshList() {
@@ -390,6 +356,184 @@ public class FlowerMainActivity extends AppCompatActivity {
                     linearLayout.removeView(textView);
                 }
             } catch (Exception e) {}
+        }
+    }
+
+    public void initialize_session() {
+        AppKeyPair appKeyPair = new AppKeyPair(APP_KEY, APP_SECRET);
+        AndroidAuthSession session = new AndroidAuthSession(appKeyPair);
+
+        mDBApi = new DropboxAPI<AndroidAuthSession>(session);
+
+        if(!getAccessToken().equalsIgnoreCase("")) {
+            mDBApi.getSession().setOAuth2AccessToken(getAccessToken());
+        } else {
+            mDBApi = new DropboxAPI<AndroidAuthSession>(session);
+            mDBApi.getSession().startOAuth2Authentication(FlowerMainActivity.this);
+        }
+    }
+
+    protected void onResume() {
+
+        super.onResume();
+
+        if (getAccessToken().equalsIgnoreCase("")){
+            if(mDBApi.getSession().authenticationSuccessful()) {
+                try {
+                    mDBApi.getSession().finishAuthentication();
+                    String accessToken = mDBApi.getSession().getOAuth2AccessToken();
+                    saveAccessToken(accessToken);
+                } catch (IllegalStateException ie) {
+                    ie.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void saveAccessToken(String accessToken) {
+        SharedPreferences sharedPreferences = getSharedPreferences("Prefs", Context.MODE_PRIVATE);
+        sharedPreferences.edit().putString("accessToken", accessToken).commit();
+    }
+
+    public String getAccessToken() {
+        SharedPreferences sharedPreferences = getSharedPreferences("Prefs", Context.MODE_PRIVATE);
+        return sharedPreferences.getString("accessToken", "");
+    }
+
+    public class Upload extends AsyncTask<String, Void, String> {
+        private Context dContext;
+        DropboxAPI<AndroidAuthSession> dDBApi;
+
+        public Upload(Context context, DropboxAPI<AndroidAuthSession> mDBApi) {
+            this.dContext = context;
+            this.dDBApi = mDBApi;
+        }
+
+        @Override
+        protected String doInBackground(String... arg0) {
+            File file = new File(photoPath);
+            FileInputStream inputStream = null;
+
+            try {
+                inputStream = new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                response = mDBApi.putFileOverwrite(name + "_" + String.valueOf(id) + ".jpg", inputStream, file.length(), null);
+            } catch (DropboxException de) {
+                de.printStackTrace();
+            } catch (IllegalArgumentException ie){
+                ie.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            try {
+                if (response.rev != null) {
+                    Log.e("SENDER", response.rev);
+                    Toast.makeText(getApplicationContext(), "Photo uploaded", Toast.LENGTH_LONG).show();
+                    sqLiteHelper.updatePhoto(response.rev, id);
+                    refreshList();
+                }
+            } catch (NullPointerException ne) {}
+        }
+    }
+
+    public DropboxAPI.Entry deletePhoto(String filePath) {
+        try {
+            mDBApi.delete(filePath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return  null;
+    }
+
+    public String getPhoto(String name, int id) {
+
+        File file = new File(Environment.getExternalStorageDirectory(), name+"_"+String.valueOf(id)+".jpg");
+        FileOutputStream outputStream;
+        String remotePath = "";
+
+        try {
+            outputStream = new FileOutputStream(file);
+            DropboxAPI.DropboxFileInfo info = null;
+            info = mDBApi.getFile(name+"_"+String.valueOf(id)+".jpg", null, outputStream, null);
+            remotePath = info.getMetadata().path;
+        } catch (FileNotFoundException fe) {
+            fe.printStackTrace();
+        } catch (DropboxException de) {
+            de.printStackTrace();
+        }
+        return remotePath;
+    }
+
+    /*public void writeDB() throws IOException {
+        flowerArrayList = sqLiteHelper.getAllRecords();
+        File file = new File(Environment.getExternalStorageDirectory(), "database.txt");
+
+        Uri filePath = Uri.fromFile(file);
+        textFilePath = getPathThruURI(getApplicationContext(), filePath);
+        FileOutputStream fileOutputStream;
+
+        try {
+            fileOutputStream = new FileOutputStream(file);
+            file.createNewFile();
+            OutputStreamWriter outWriter = new OutputStreamWriter(fileOutputStream);
+
+            for (Flower flower: flowerArrayList) {
+                outWriter.append(flower.getName() + "\n");
+                outWriter.append(flower.getEase() + "\n");
+                outWriter.append(flower.getInstructions() + "\n");
+                outWriter.append("---\n");
+            }
+
+            outWriter.close();
+            fileOutputStream.flush();
+            fileOutputStream.close();
+        } catch (FileNotFoundException fe) {
+            fe.printStackTrace();
+        }
+    }*/
+
+    public class UploadText extends AsyncTask<String, Void, String> {
+        private Context dContext;
+        DropboxAPI<AndroidAuthSession> dDBApi;
+
+        public UploadText(Context context, DropboxAPI<AndroidAuthSession> mDBApi) {
+            this.dContext = context;
+            this.dDBApi = mDBApi;
+        }
+
+        @Override
+        protected String doInBackground(String... arg0) {
+            File file = new File(textFilePath);
+            FileInputStream inputStream = null;
+
+            try {
+                inputStream = new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                response = mDBApi.putFileOverwrite("database.txt", inputStream, file.length(), null);
+            } catch (DropboxException de) {
+                de.printStackTrace();
+            } catch (IllegalArgumentException ie){
+                ie.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            Toast.makeText(getApplicationContext(), "Text file uploaded", Toast.LENGTH_LONG).show();
         }
     }
 }

@@ -1,16 +1,32 @@
 package ph.edu.up.floweralmanac;
 
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.CursorIndexOutOfBoundsException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
+import android.support.v4.content.ContextCompat;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
 import ph.edu.up.floweralmanac.models.Flower;
+
+import static ph.edu.up.floweralmanac.AddActivity.getPathThruURI;
 
 /**
  * Created by fulltime on 07/06/2017.
@@ -109,6 +125,14 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         database.close();
     }
 
+    public void updatePhoto(String revId, int id) {
+        database = this.getReadableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_REV, revId);
+        database.update(TABLE_NAME, contentValues, COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
+        database.close();
+    }
+
     public void deleteRecords(Flower flower) {
         database = this.getReadableDatabase();
         database.delete(TABLE_NAME, COLUMN_NAME + " = ?", new String[]{flower.getName()});
@@ -162,4 +186,36 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         return flowerArrayList;
     }
 
+    public String writeDB(Context context) throws IOException {
+        List<Flower> flowerArrayList = getAllRecords();
+        File file = new File(Environment.getExternalStorageDirectory(), "database.txt");
+
+        Uri filePath = Uri.fromFile(file);
+        String textFilePath = getPathThruURI(context, filePath);
+        FileOutputStream fileOutputStream;
+
+        try {
+            fileOutputStream = new FileOutputStream(file);
+            file.createNewFile();
+            OutputStreamWriter outWriter = new OutputStreamWriter(fileOutputStream);
+
+            for (Flower flower: flowerArrayList) {
+                outWriter.append(flower.getName()+ "_" + String.valueOf(flower.getId()) +"\n");
+                outWriter.append(flower.getEase()+"\n");
+
+                if (flower.getInstructions().equals("")) {
+                    flower.setInstructions("None");
+                }
+
+                outWriter.append(flower.getInstructions()+"\n");
+            }
+
+            outWriter.close();
+            fileOutputStream.flush();
+            fileOutputStream.close();
+        } catch (FileNotFoundException fe) {
+            fe.printStackTrace();
+        }
+        return textFilePath;
+    }
 }

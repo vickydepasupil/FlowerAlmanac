@@ -1,18 +1,23 @@
 package ph.edu.up.floweralmanac;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
 
 import java.io.File;
@@ -28,8 +33,10 @@ public class ViewActivity extends AppCompatActivity {
     public final static String NAME = "ph.edu.up.viewactivity.NAME";
     public final static String EASE = "ph.edu.up.viewactivity.EASE";
     public final static String INST = "ph.edu.up.viewactivity.INST";
-    public final static String REV = "ph.edu.up.viewactivity.DEL";
+    public final static String REV = "ph.edu.up.viewactivity.REV";
     public final static String DEL = "ph.edu.up.viewactivity.DEL";
+
+    public static String path = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,8 +66,11 @@ public class ViewActivity extends AppCompatActivity {
         TextView userText4 = (TextView) findViewById(R.id.revField);
         userText4.setText(revFlower);
 
+        ImageView imageView = (ImageView) findViewById(R.id.image);
+
+        Log.e("SENDER", revFlower);
+
         if (revFlower.equals("")) {
-            ImageView imageView = (ImageView) findViewById(R.id.image);
             if (easeFlower.equals("Easy")) {
                 imageView.setImageResource(R.mipmap.inspired);
             } else if (easeFlower.equals("Medium")) {
@@ -69,16 +79,8 @@ public class ViewActivity extends AppCompatActivity {
                 imageView.setImageResource(R.mipmap.laugh);
             }
         } else {
-            String path = getPhoto(nameFlower, idFlower);
-
-            try {
-                InputStream inputStream = mDBApi.getThumbnailStream(path, DropboxAPI.ThumbSize.ICON_256x256, DropboxAPI.ThumbFormat.JPEG);
-                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                ImageView imageView = (ImageView) findViewById(R.id.image);
-                imageView.setImageBitmap(bitmap);
-            } catch (DropboxException de) {
-                de.printStackTrace();
-            }
+            path = getPhoto(nameFlower, idFlower);
+            new Download(getApplicationContext(), imageView, mDBApi).execute();
         }
     }
 
@@ -98,6 +100,38 @@ public class ViewActivity extends AppCompatActivity {
             de.printStackTrace();
         }
         return remotePath;
+    }
+
+    public class Download extends AsyncTask<String, Void, Bitmap> {
+        private Context dContext;
+        private View rootView;
+        DropboxAPI<AndroidAuthSession> dDBApi;
+
+        public Download(Context context, View view, DropboxAPI<AndroidAuthSession> mDBApi) {
+            this.dContext = context;
+            this.rootView = view;
+            this.dDBApi = mDBApi;
+        }
+
+        protected void onPreExecute(){}
+
+        protected Bitmap doInBackground(String... arg0) {
+            try {
+                InputStream inputStream = mDBApi.getThumbnailStream(path, DropboxAPI.ThumbSize.ICON_256x256, DropboxAPI.ThumbFormat.JPEG);
+                return BitmapFactory.decodeStream(inputStream);
+            } catch (DropboxException de) {
+                de.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            ImageView imageView = (ImageView) rootView.findViewById(R.id.image);
+            if (imageView != null && bitmap != null) {
+                imageView.setImageBitmap(bitmap);
+            }
+        }
     }
 
     @Override

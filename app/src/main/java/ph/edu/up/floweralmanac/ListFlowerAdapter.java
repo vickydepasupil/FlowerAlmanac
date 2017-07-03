@@ -3,8 +3,8 @@ package ph.edu.up.floweralmanac;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Environment;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
 
 import java.io.File;
@@ -24,14 +25,12 @@ import ph.edu.up.floweralmanac.models.Flower;
 
 import static ph.edu.up.floweralmanac.FlowerMainActivity.mDBApi;
 
-/**
- * Created by fulltime on 07/06/2017.
- */
-
 public class ListFlowerAdapter extends BaseAdapter {
 
     private Context context;
     private List<Flower> flowerList;
+
+    public static String path = "";
 
     public ListFlowerAdapter(Context context, List<Flower> flowerList) {
         this.context = context;
@@ -65,16 +64,11 @@ public class ListFlowerAdapter extends BaseAdapter {
 
         String rev = flowerList.get(position).getRev();
 
-        if (!rev.equals("")) {
-            String path = getPhoto(flowerList.get(position).getName(), flowerList.get(position).getId());
+        if (!rev.equals("") && rev != null) {
 
-            try {
-                InputStream inputStream = mDBApi.getThumbnailStream(path, DropboxAPI.ThumbSize.ICON_32x32, DropboxAPI.ThumbFormat.JPEG);
-                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                imageView.setImageBitmap(bitmap);
-            } catch (DropboxException de) {
-                de.printStackTrace();
-            }
+            path = getPhoto(flowerList.get(position).getName(), flowerList.get(position).getId());
+            new Download(context, view, mDBApi).execute();
+
         } else {
 
             String ease = flowerList.get(position).getEase();
@@ -91,6 +85,7 @@ public class ListFlowerAdapter extends BaseAdapter {
     }
 
     public String getPhoto(String name, int id) {
+
         File file = new File(Environment.getExternalStorageDirectory(), name+"_"+String.valueOf(id)+".jpg");
         FileOutputStream outputStream;
         String remotePath = "";
@@ -108,4 +103,35 @@ public class ListFlowerAdapter extends BaseAdapter {
         return remotePath;
     }
 
+    public class Download extends AsyncTask<String, Void, Bitmap> {
+        private Context dContext;
+        private View rootView;
+        DropboxAPI<AndroidAuthSession> dDBApi;
+
+        public Download(Context context, View view, DropboxAPI<AndroidAuthSession> mDBApi) {
+            this.dContext = context;
+            this.rootView = view;
+            this.dDBApi = mDBApi;
+        }
+
+        protected void onPreExecute(){}
+
+        protected Bitmap doInBackground(String... arg0) {
+            try {
+                InputStream inputStream = mDBApi.getThumbnailStream(path, DropboxAPI.ThumbSize.ICON_256x256, DropboxAPI.ThumbFormat.JPEG);
+                return BitmapFactory.decodeStream(inputStream);
+            } catch (DropboxException de) {
+                de.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            ImageView imageView = (ImageView) rootView.findViewById(R.id.thumbnail);
+            if (imageView != null && bitmap != null) {
+                imageView.setImageBitmap(bitmap);
+            }
+        }
+    }
 }
