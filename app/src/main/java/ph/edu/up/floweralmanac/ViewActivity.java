@@ -28,7 +28,6 @@ import java.io.InputStream;
 import static ph.edu.up.floweralmanac.FlowerMainActivity.mDBApi;
 
 public class ViewActivity extends AppCompatActivity {
-    //Incorporate post to FB feature - another oAuth
 
     public final static String ID = "ph.edu.up.viewactivity.ID";
     public final static String NAME = "ph.edu.up.viewactivity.NAME";
@@ -206,7 +205,6 @@ public class ViewActivity extends AppCompatActivity {
             finish();
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 }

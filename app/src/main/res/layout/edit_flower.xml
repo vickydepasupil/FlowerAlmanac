@@ -166,17 +166,6 @@
                     android:layout_marginTop="20dp"
                     android:src="@drawable/rounded_corner" />
 
-                <!--<Button
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:text="x"
-                    android:background="@drawable/clear_xml"
-                    android:clickable="true"
-                    android:layout_gravity="right"
-                    android:layout_marginRight="20dp"
-                    android:layout_marginTop="30dp"
-                    android:id="@+id/clear_button" />-->
-
             </FrameLayout>
         </LinearLayout>
     </android.support.design.widget.CoordinatorLayout>

@@ -44,7 +44,6 @@ import ph.edu.up.floweralmanac.models.Flower;
 import static ph.edu.up.floweralmanac.AddActivity.getPathThruURI;
 
 public class FlowerMainActivity extends AppCompatActivity {
-    //For review - more features to ass for practice
 
     private ListView listView;
     private ListFlowerAdapter flowerAdapter;

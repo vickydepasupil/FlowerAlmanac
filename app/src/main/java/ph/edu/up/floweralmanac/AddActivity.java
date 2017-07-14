@@ -46,7 +46,6 @@ import java.io.InputStream;
 import static ph.edu.up.floweralmanac.FlowerMainActivity.mDBApi;
 
 public class AddActivity extends AppCompatActivity {
-    //TODO - Add remove photo via button click
 
     public final static String ID = "ph.edu.up.addactivity.ID";
     public final static String NAME = "ph.edu.up.addactivity.NAME";
@@ -274,20 +273,18 @@ public class AddActivity extends AppCompatActivity {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private void onSelectFromGalleryResult(Intent data) {
+    private void onSelectFromGalleryResult(Intent data) { // Retrieves thumbnail instead of actual file to save bandwith on upload
         Bitmap bitmap = null;
 
         if (data != null) {
-            try {
-                bitmap = MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), data.getData());
+            String wholeID = DocumentsContract.getDocumentId(data.getData());
+            String id = wholeID.split(":")[1];
+            Long origId = Long.parseLong(id);
 
-                Uri pathUri = data.getData();
-                path = getPathThruURI(getApplicationContext(), pathUri);
+            bitmap = MediaStore.Images.Thumbnails.getThumbnail(getApplicationContext().getContentResolver(),
+                    origId, MediaStore.Images.Thumbnails.MINI_KIND, null);
 
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+            path = getThumbPath(origId);
         }
         ImageView imageView = (ImageView) findViewById(R.id.photoView);
         Bitmap rotated = ExifUtil.rotateBitmap(path, bitmap);
@@ -381,6 +378,26 @@ public class AddActivity extends AppCompatActivity {
             return uri.getPath();
         }
 
+        return null;
+    }
+
+    public String getThumbPath(long longId) {
+        Cursor thumbCursor = null;
+        try {
+            thumbCursor = getApplicationContext().getContentResolver().
+                    query(MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI, null,
+                            MediaStore.Images.Thumbnails.IMAGE_ID + " = " + longId+ " AND "
+                                    + MediaStore.Images.Thumbnails.KIND + " = "
+                                    + MediaStore.Images.Thumbnails.MINI_KIND , null, null);
+            if(thumbCursor.moveToFirst()) {
+                int dataIndex = thumbCursor.getColumnIndexOrThrow( MediaStore.MediaColumns.DATA );
+                return thumbCursor.getString(dataIndex);
+            }
+        } finally {
+            if(thumbCursor != null){
+                thumbCursor.close();
+            }
+        }
         return null;
     }
 
